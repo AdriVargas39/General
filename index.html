@@ -336,7 +336,7 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
         <span class="modal-title" data-i18n="login_title">Admin Login</span>
         <button class="modal-close" onclick="closeModals()">✕</button>
       </div>
-      <input type="email" id="adminEmail" class="form-input" placeholder="Correo" data-i18n-placeholder="email_placeholder">
+      <input type="text" id="sellerCode" class="form-input" placeholder="Código de vendedor (8 caracteres)" data-i18n-placeholder="seller_code_placeholder" maxlength="8" autocomplete="username" autocapitalize="characters" spellcheck="false">
       <div class="password-wrap">
         <input type="password" id="adminPass" class="form-input" placeholder="Contraseña" data-i18n-placeholder="password_placeholder">
         <button type="button" class="password-toggle" id="passToggleBtn" onclick="togglePassword()" title="Mostrar contraseña" data-i18n-title="show_password_tooltip">👁️</button>
@@ -468,11 +468,11 @@ const I18N = {
     no_orders:'No hay pedidos',
     chat_intro:'¿Tienes una pregunta sobre un producto o servicio, un pedido o algo más? Escribe tu mensaje: se abrirá WhatsApp con todo listo, solo tienes que darle <strong>Enviar</strong> allí.',
     chat_message_placeholder:'Escribe tu mensaje...', chat_send_btn:'💬 Enviar por WhatsApp',
-    login_title:'Admin Login (AdriVargas39/General)', email_placeholder:'Correo', password_placeholder:'Contraseña',
+    login_title:'Acceso de vendedor', seller_code_placeholder:'Código de vendedor (8 caracteres)', password_placeholder:'Contraseña',
     login_btn:'Ingresar', logout_btn:'Cerrar Sesión',
     upload_product_title:'Subir Prenda', edit_product_title:'Editar Prenda',
     alert_admin_login_required:'Inicia sesión como administrador.',
-    toast_welcome_admin:'¡Bienvenida Administradora!', alert_login_error:'Error de acceso: ',
+    toast_welcome_admin:'¡Bienvenido/a! Sesión iniciada correctamente', alert_login_error:'Error de acceso: ',
     alert_auth_failed:'No se pudo iniciar la app: ', alert_auth_hint:'\n\nRevisa que el proveedor "Anonymous" esté activado en Firebase.',
     toast_only_admin_logo:'Solo la administradora puede cambiar el logo', alert_select_logo_image:'Selecciona una imagen para el logo',
     toast_uploading_logo:'Subiendo logo...', toast_logo_updated:'¡Logo actualizado con éxito!', toast_logo_removed:'Logo eliminado (en blanco)', alert_logo_upload_error:'Error al subir logo: ',
@@ -540,11 +540,11 @@ const I18N = {
     no_orders:'No orders yet',
     chat_intro:'Have a question about a product or service, an order, or anything else? Write your message: WhatsApp will open with everything ready, just tap <strong>Send</strong> there.',
     chat_message_placeholder:'Write your message...', chat_send_btn:'💬 Send via WhatsApp',
-    login_title:'Admin Login', email_placeholder:'Email', password_placeholder:'Password',
+    login_title:'Seller Login', seller_code_placeholder:'Seller code (8 characters)', password_placeholder:'Password',
     login_btn:'Log In', logout_btn:'Log Out',
     upload_product_title:'Upload Item', edit_product_title:'Edit Item',
     alert_admin_login_required:'Log in as an administrator.',
-    toast_welcome_admin:'Welcome, Admin!', alert_login_error:'Login error: ',
+    toast_welcome_admin:'Welcome! You are now signed in', alert_login_error:'Login error: ',
     alert_auth_failed:'Could not start the app: ', alert_auth_hint:'\n\nCheck that the "Anonymous" provider is enabled in Firebase.',
     toast_only_admin_logo:'Only the administrator can change the logo', alert_select_logo_image:'Select an image for the logo',
     toast_uploading_logo:'Uploading logo...', toast_logo_updated:'Logo updated successfully!', toast_logo_removed:'Logo removed (blank)', alert_logo_upload_error:'Error uploading logo: ',
@@ -777,11 +777,34 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁️';
 }
 
+function normalizeSellerCode(value) {
+  return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Firebase Authentication uses email/password internally. The seller never sees
+// this technical identifier: their 8-character code is converted to a private,
+// synthetic login address used only by this General project.
+function sellerAuthEmail(code) {
+  return normalizeSellerCode(code).toLowerCase() + '@seller.general.local';
+}
+
 function loginAdmin() {
-  const email = document.getElementById('adminEmail').value;
-  const pass = document.getElementById('adminPass').value;
-  auth.signInWithEmailAndPassword(email, pass).then(() => {
-    closeModals(); showToast(t('toast_welcome_admin'));
+  const codeInput = document.getElementById('sellerCode');
+  const passInput = document.getElementById('adminPass');
+  const code = normalizeSellerCode(codeInput.value);
+  const pass = passInput.value;
+
+  if (!/^[A-Z0-9]{8}$/.test(code)) {
+    return alert('El código de vendedor debe tener exactamente 8 letras y números.');
+  }
+  if (!pass) {
+    return alert('Escribe tu contraseña.');
+  }
+
+  auth.signInWithEmailAndPassword(sellerAuthEmail(code), pass).then(() => {
+    codeInput.value = code;
+    closeModals();
+    showToast(t('toast_welcome_admin'));
   }).catch(e => alert(t('alert_login_error') + e.message));
 }
 function logoutAdmin() { auth.signOut(); closeModals(); showToast(t('toast_logged_out')); }
