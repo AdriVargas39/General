@@ -349,11 +349,11 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
   <div id="addProductModal" class="modal-overlay" onclick="closeModals(event)">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <span class="modal-title" id="modalProductTitle" data-i18n="upload_product_title">Subir Prenda</span>
+        <span class="modal-title" id="modalProductTitle" data-i18n="upload_product_title">Subir Producto o Servicio</span>
         <button class="modal-close" onclick="closeModals()">✕</button>
       </div>
       <input type="hidden" id="editProdId">
-      <input type="text" id="newProdName" class="form-input" placeholder="Nombre de la prenda" data-i18n-placeholder="product_name_placeholder">
+      <input type="text" id="newProdName" class="form-input" placeholder="Nombre del Producto o Servicio" data-i18n-placeholder="product_name_placeholder">
       <input type="number" id="newProdPrice" class="form-input" placeholder="Precio ($)" data-i18n-placeholder="product_price_placeholder">
       <div style="display:flex; gap:8px; align-items:flex-start;">
         <select id="newProdCat" class="form-input" style="flex:1;">
@@ -454,9 +454,9 @@ const I18N = {
     search_placeholder:'Buscar', filter_all:'Todo',
     admin_upload_btn:'➕ Subir Producto Nuevo',
     stock_all:'Todos', stock_available:'Disponibles', stock_low:'Poco stock', stock_out:'Agotados',
-    loading_catalog:'Cargando catálogo...', no_products:'No hay prendas disponibles',
+    loading_catalog:'Cargando catálogo...', no_products:'No hay productos o servicios disponibles',
     add_btn:'Agregar', not_available:'No disponible', not_available_admin:'No disponible · Puedes editarla o borrarla',
-    confirm_delete_product:'¿Seguro que deseas eliminar esta prenda?', toast_product_deleted:'Producto eliminado',
+    confirm_delete_product:'¿Seguro que deseas eliminar este artículo?', toast_product_deleted:'Producto eliminado',
     alert_product_not_available:'Este producto no está disponible', toast_added_to_cart:'Añadido al carrito',
     low_stock_prefix:'⚠️ Stock bajo', stock_prefix:'Stock', size_prefix:'Talla', color_prefix:'Color',
     size_default:'Única', color_default:'Varios', edit_btn:'✏️ Editar', delete_product_btn:'🗑️ Borrar',    cart_empty:'Tu carrito está vacío',
@@ -470,7 +470,7 @@ const I18N = {
     chat_message_placeholder:'Escribe tu mensaje...', chat_send_btn:'💬 Enviar por WhatsApp',
     login_title:'Admin Login (AdriVargas39/General)', email_placeholder:'Correo', password_placeholder:'Contraseña',
     login_btn:'Ingresar', logout_btn:'Cerrar Sesión',
-    upload_product_title:'Subir Prenda', edit_product_title:'Editar Prenda',
+    upload_product_title:'Subir Artículo', edit_product_title:'Editar Artículo',
     alert_admin_login_required:'Inicia sesión como administrador.',
     toast_welcome_admin:'¡Bienvenida Administradora!', alert_login_error:'Error de acceso: ',
     alert_auth_failed:'No se pudo iniciar la app: ', alert_auth_hint:'\n\nRevisa que el proveedor "Anonymous" esté activado en Firebase.',
@@ -486,7 +486,7 @@ const I18N = {
     toast_operation_success:'¡Operación exitosa!', alert_generic_error:'Error: ', alert_image_upload_error:'Error al subir imagen: ',
     toast_updating_product:'Actualizando producto...', toast_saving_product:'Guardando producto...',
     logo_tooltip:'Logo de la tienda', show_password_tooltip:'Mostrar contraseña', add_category_tooltip:'Agregar categoría', delete_category_tooltip:'Eliminar categoría',
-    product_name_placeholder:'Nombre de la prenda', product_price_placeholder:'Precio ($)',
+    product_name_placeholder:'Nombre del Artículo', product_price_placeholder:'Precio ($)',
     select_category:'Selecciona una categoría', add_category_btn:'+ Categoría',
     product_size_placeholder:'Talla(s) (ej: S, M, L o Única)', product_colors_placeholder:'Color(es) (ej: Rojo, Negro, Azul)',
     current_stock_label:'Stock actual:', quantity_placeholder:'Cantidad',
