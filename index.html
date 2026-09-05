@@ -9,7 +9,6 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 :root{
@@ -431,17 +430,30 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyBtkpwXWWJUDDab3RLuzxS7oAOmFv-LpG8",
-  authDomain: "adrivargas-f9558.firebaseapp.com",
-  projectId: "adrivargas-f9558",
-  storageBucket: "adrivargas-f9558.firebasestorage.app",
-  messagingSenderId: "831196414635",
-  appId: "1:831196414635:web:63c469d105337a7b976dee"
+  apiKey: "AIzaSyCLWpzC7SGN_-t7SlrDiOf3rZqv59T8b0E",
+  authDomain: "kreadu-dd0c9.firebaseapp.com",
+  projectId: "kreadu-dd0c9",
+  storageBucket: "kreadu-dd0c9.firebasestorage.app",
+  messagingSenderId: "74274232747",
+  appId: "1:74274232747:web:4b74c3483c89bc907edaee"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const storage = firebase.storage();
 const auth = firebase.auth();
+
+// Subida de fotos a Cloudflare R2 a través del Worker
+const UPLOAD_WORKER_URL = "https://generalfoto.raipimo37.workers.dev/";
+
+function uploadToR2(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return fetch(UPLOAD_WORKER_URL, { method: 'POST', body: formData })
+    .then(res => {
+      if (!res.ok) throw new Error('Error al subir la imagen (' + res.status + ')');
+      return res.json();
+    })
+    .then(data => data.url);
+}
 
 const whatsappNumber = "573017038040"; 
 
@@ -816,8 +828,7 @@ function saveLogo() {
   closeModals();
   showToast(t('toast_uploading_logo'));
 
-  const ref = storage.ref(`logo/store_logo_${Date.now()}`);
-  ref.put(file).then(snap => snap.ref.getDownloadURL()).then(url => {
+  uploadToR2(file).then(url => {
     return db.collection('config').doc('store').set({ logoUrl: url }, { merge: true });
   }).then(() => {
     document.getElementById('newLogoImg').value = '';
@@ -1079,8 +1090,7 @@ function saveProduct() {
   };
 
   if(file) {
-    storage.ref(`products/${Date.now()}_${file.name}`).put(file)
-      .then(snap => snap.ref.getDownloadURL())
+    uploadToR2(file)
       .then(url => saveData(url))
       .catch(err => alert(t('alert_image_upload_error') + err.message));
   } else {
