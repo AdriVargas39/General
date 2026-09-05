@@ -335,12 +335,13 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
         <span class="modal-title" data-i18n="login_title">Admin Login</span>
         <button class="modal-close" onclick="closeModals()">✕</button>
       </div>
-      <input type="email" id="adminEmail" class="form-input" placeholder="Correo" data-i18n-placeholder="email_placeholder">
+      <input type="text" id="adminEmail" class="form-input" placeholder="Usuario (8 caracteres)" maxlength="8" data-i18n-placeholder="username_placeholder">
       <div class="password-wrap">
         <input type="password" id="adminPass" class="form-input" placeholder="Contraseña" data-i18n-placeholder="password_placeholder">
         <button type="button" class="password-toggle" id="passToggleBtn" onclick="togglePassword()" title="Mostrar contraseña" data-i18n-title="show_password_tooltip">👁️</button>
       </div>
       <button class="btn-full" onclick="loginAdmin()" data-i18n="login_btn">Ingresar</button>
+      <button class="btn-full" style="background:var(--text-secondary); margin-top:10px; display:none;" id="registerBtn" onclick="registerAdmin()" data-i18n="register_btn">Crear cuenta de administrador</button>
       <button class="btn-full" style="background:#dc2626; margin-top:10px; display:none;" id="logoutBtn" onclick="logoutAdmin()" data-i18n="logout_btn">Cerrar Sesión</button>
     </div>
   </div>
@@ -480,7 +481,12 @@ const I18N = {
     no_orders:'No hay pedidos',
     chat_intro:'¿Tienes una pregunta sobre un producto o servicio, un pedido o algo más? Escribe tu mensaje: se abrirá WhatsApp con todo listo, solo tienes que darle <strong>Enviar</strong> allí.',
     chat_message_placeholder:'Escribe tu mensaje...', chat_send_btn:'💬 Enviar por WhatsApp',
-    login_title:'Admin Login (AdriVargas39/General)', email_placeholder:'Correo', password_placeholder:'Contraseña',
+    login_title:'Admin Login (AdriVargas39/General)', username_placeholder:'Usuario (8 caracteres)', password_placeholder:'Contraseña',
+    register_btn:'Crear cuenta de administrador',
+    alert_username_format:'El usuario debe tener exactamente 8 caracteres (letras y números).',
+    alert_password_short:'La contraseña debe tener al menos 6 caracteres.',
+    alert_admin_already_exists:'Ya existe una cuenta de administrador para esta tienda.',
+    toast_admin_created:'¡Cuenta de administrador creada! Ya iniciaste sesión.',
     login_btn:'Ingresar', logout_btn:'Cerrar Sesión',
     upload_product_title:'Subir Artículo', edit_product_title:'Editar Artículo',
     alert_admin_login_required:'Inicia sesión como administrador.',
@@ -552,7 +558,12 @@ const I18N = {
     no_orders:'No orders yet',
     chat_intro:'Have a question about a product or service, an order, or anything else? Write your message: WhatsApp will open with everything ready, just tap <strong>Send</strong> there.',
     chat_message_placeholder:'Write your message...', chat_send_btn:'💬 Send via WhatsApp',
-    login_title:'Admin Login', email_placeholder:'Email', password_placeholder:'Password',
+    login_title:'Admin Login', username_placeholder:'Username (8 characters)', password_placeholder:'Password',
+    register_btn:'Create administrator account',
+    alert_username_format:'Username must be exactly 8 characters (letters and numbers).',
+    alert_password_short:'Password must be at least 6 characters.',
+    alert_admin_already_exists:'An administrator account already exists for this store.',
+    toast_admin_created:'Administrator account created! You are now logged in.',
     login_btn:'Log In', logout_btn:'Log Out',
     upload_product_title:'Upload Item', edit_product_title:'Edit Item',
     alert_admin_login_required:'Log in as an administrator.',
@@ -624,7 +635,12 @@ const I18N = {
     no_orders:'Aucune commande',
     chat_intro:'Une question sur un produit ou un service, une commande ou autre chose ? Écrivez votre message : WhatsApp s\'ouvrira avec tout prêt, il ne restera qu\'à appuyer sur <strong>Envoyer</strong>.',
     chat_message_placeholder:'Écrivez votre message...', chat_send_btn:'💬 Envoyer via WhatsApp',
-    login_title:'Connexion admin', email_placeholder:'E-mail', password_placeholder:'Mot de passe',
+    login_title:'Connexion admin', username_placeholder:'Utilisateur (8 caractères)', password_placeholder:'Mot de passe',
+    register_btn:'Créer un compte administrateur',
+    alert_username_format:'Le nom d\'utilisateur doit comporter exactement 8 caractères (lettres et chiffres).',
+    alert_password_short:'Le mot de passe doit comporter au moins 6 caractères.',
+    alert_admin_already_exists:'Un compte administrateur existe déjà pour cette boutique.',
+    toast_admin_created:'Compte administrateur créé ! Vous êtes maintenant connecté(e).',
     login_btn:'Se connecter', logout_btn:'Se déconnecter',
     upload_product_title:'Ajouter un article', edit_product_title:'Modifier l\'article',
     alert_admin_login_required:'Connectez-vous en tant qu\'administrateur.',
@@ -770,7 +786,7 @@ auth.onAuthStateChanged(user => {
   loadOrders();
 });
 
-function openLoginModal() { document.getElementById('loginModal').classList.add('active'); }
+function openLoginModal() { document.getElementById('loginModal').classList.add('active'); checkAdminExists(); }
 function openLogoModal() { 
   document.getElementById('newLogoImg').value = '';
   document.getElementById('logoModal').classList.add('active'); 
@@ -789,13 +805,50 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁️';
 }
 
+// Convierte el usuario de 8 caracteres en un correo interno para Firebase Auth
+const ADMIN_EMAIL_DOMAIN = "@general-tienda.app";
+function usernameToEmail(username) {
+  return username.toLowerCase() + ADMIN_EMAIL_DOMAIN;
+}
+function isValidUsername(username) {
+  return /^[a-zA-Z0-9]{8}$/.test(username);
+}
+
+function checkAdminExists() {
+  db.collection('config').doc('adminMeta').get().then(doc => {
+    const hasAdmin = doc.exists && doc.data().hasAdmin;
+    document.getElementById('registerBtn').style.display = hasAdmin ? 'none' : 'block';
+  }).catch(() => {});
+}
+
 function loginAdmin() {
-  const email = document.getElementById('adminEmail').value;
+  const username = document.getElementById('adminEmail').value.trim();
   const pass = document.getElementById('adminPass').value;
-  auth.signInWithEmailAndPassword(email, pass).then(() => {
+  if(!isValidUsername(username)) return alert(t('alert_username_format'));
+  auth.signInWithEmailAndPassword(usernameToEmail(username), pass).then(() => {
     closeModals(); showToast(t('toast_welcome_admin'));
   }).catch(e => alert(t('alert_login_error') + e.message));
 }
+
+function registerAdmin() {
+  const username = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  if(!isValidUsername(username)) return alert(t('alert_username_format'));
+  if(!pass || pass.length < 6) return alert(t('alert_password_short'));
+
+  db.collection('config').doc('adminMeta').get().then(doc => {
+    if(doc.exists && doc.data().hasAdmin) {
+      alert(t('alert_admin_already_exists'));
+      return;
+    }
+    return auth.createUserWithEmailAndPassword(usernameToEmail(username), pass).then(() => {
+      return db.collection('config').doc('adminMeta').set({ hasAdmin: true, username }, { merge: true });
+    }).then(() => {
+      closeModals(); showToast(t('toast_admin_created'));
+    });
+  }).catch(e => alert(t('alert_login_error') + e.message));
+}
+
 function logoutAdmin() { auth.signOut(); closeModals(); showToast(t('toast_logged_out')); }
 
 function loadLogo() {
