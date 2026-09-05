@@ -181,7 +181,6 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
   text-decoration: underline;
 }
 
-/* Mejoras para una tienda administrada desde casa */
 .stock-quick-controls{
   display:flex;
   align-items:center;
@@ -442,7 +441,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// Subida de fotos a Cloudflare R2 a través del Worker
 const UPLOAD_WORKER_URL = "https://generalfoto.raipimo37.workers.dev/";
 
 function uploadToR2(file) {
@@ -457,10 +455,8 @@ function uploadToR2(file) {
 }
 
 const whatsappNumber = "573017038040"; 
-
 let pendingWhatsAppText = '';
 
-/* ===== I18N ===== */
 const I18N = {
   es: {
     tab_catalogo:'Catálogo', tab_carrito:'Carrito', tab_pedidos:'Pedidos', tab_chat:'Chat',
@@ -472,7 +468,8 @@ const I18N = {
     confirm_delete_product:'¿Seguro que deseas eliminar este artículo?', toast_product_deleted:'Producto eliminado',
     alert_product_not_available:'Este producto no está disponible', toast_added_to_cart:'Añadido al carrito',
     low_stock_prefix:'⚠️ Stock bajo', stock_prefix:'Stock', size_prefix:'Talla', color_prefix:'Color',
-    size_default:'Única', color_default:'Varios', edit_btn:'✏️ Editar', delete_product_btn:'🗑️ Borrar',    cart_empty:'Tu carrito está vacío',
+    size_default:'Única', color_default:'Varios', edit_btn:'✏️ Editar', delete_product_btn:'🗑️ Borrar',
+    cart_empty:'Tu carrito está vacío',
     order_name_placeholder:'Tu nombre completo', order_phone_placeholder:'Tu número de celular',
     total_label:'Total a pagar', order_whatsapp_btn:'Pedir por WhatsApp',
     admin_label_client:'Modo cliente', admin_label_admin:'Modo vendedora (Activo)',
@@ -481,7 +478,7 @@ const I18N = {
     no_orders:'No hay pedidos',
     chat_intro:'¿Tienes una pregunta sobre un producto o servicio, un pedido o algo más? Escribe tu mensaje: se abrirá WhatsApp con todo listo, solo tienes que darle <strong>Enviar</strong> allí.',
     chat_message_placeholder:'Escribe tu mensaje...', chat_send_btn:'💬 Enviar por WhatsApp',
-    login_title:'Admin Login (AdriVargas39/General)', username_placeholder:'Usuario (8 caracteres)', password_placeholder:'Contraseña',
+    login_title:'Admin Login', username_placeholder:'Usuario (8 caracteres)', password_placeholder:'Contraseña',
     register_btn:'Crear cuenta de administrador',
     alert_username_format:'El usuario debe tener exactamente 8 caracteres (letras y números).',
     alert_password_short:'La contraseña debe tener al menos 6 caracteres.',
@@ -549,7 +546,8 @@ const I18N = {
     confirm_delete_product:'Are you sure you want to delete this item?', toast_product_deleted:'Product deleted',
     alert_product_not_available:'This product is not available', toast_added_to_cart:'Added to cart',
     low_stock_prefix:'⚠️ Low stock', stock_prefix:'Stock', size_prefix:'Size', color_prefix:'Color',
-    size_default:'One Size', color_default:'Various', edit_btn:'✏️ Edit', delete_product_btn:'🗑️ Delete',    cart_empty:'Your cart is empty',
+    size_default:'One Size', color_default:'Various', edit_btn:'✏️ Edit', delete_product_btn:'🗑️ Delete',
+    cart_empty:'Your cart is empty',
     order_name_placeholder:'Your full name', order_phone_placeholder:'Your phone number',
     total_label:'Total to pay', order_whatsapp_btn:'Order via WhatsApp',
     admin_label_client:'Customer mode', admin_label_admin:'Seller mode (Active)',
@@ -626,7 +624,8 @@ const I18N = {
     confirm_delete_product:'Voulez-vous vraiment supprimer cet article ?', toast_product_deleted:'Produit supprimé',
     alert_product_not_available:'Ce produit n\'est pas disponible', toast_added_to_cart:'Ajouté au panier',
     low_stock_prefix:'⚠️ Stock faible', stock_prefix:'Stock', size_prefix:'Taille', color_prefix:'Couleur',
-    size_default:'Unique', color_default:'Divers', edit_btn:'✏️ Modifier', delete_product_btn:'🗑️ Supprimer',    cart_empty:'Votre panier est vide',
+    size_default:'Unique', color_default:'Divers', edit_btn:'✏️ Modifier', delete_product_btn:'🗑️ Supprimer',
+    cart_empty:'Votre panier est vide',
     order_name_placeholder:'Votre nom complet', order_phone_placeholder:'Votre numéro de téléphone',
     total_label:'Total à payer', order_whatsapp_btn:'Commander via WhatsApp',
     admin_label_client:'Mode client', admin_label_admin:'Mode vendeuse (Actif)',
@@ -749,6 +748,7 @@ function copyWhatsAppMessage() {
     .then(() => showToast(t('toast_copied')))
     .catch(() => showToast(t('toast_copy_failed')));
 }
+
 const FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="#F5EDE4"/><text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#A89484" text-anchor="middle" dominant-baseline="middle">Sin imagen</text></svg>`
 );
@@ -805,7 +805,6 @@ function togglePassword() {
   btn.textContent = isHidden ? '🙈' : '👁️';
 }
 
-// Convierte el usuario de 8 caracteres en un correo interno para Firebase Auth
 const ADMIN_EMAIL_DOMAIN = "@general-tienda.app";
 function usernameToEmail(username) {
   return username.toLowerCase() + ADMIN_EMAIL_DOMAIN;
