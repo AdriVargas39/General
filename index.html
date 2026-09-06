@@ -1345,12 +1345,6 @@ function openEditModal(id) {
 function saveProduct() {
   if (!isAdmin) return alert(t('alert_not_authorized'));
   const editId = document.getElementById('editProdId').value;
-
-  // Límite máximo de 5 artículos para productos nuevos
-  if (!editId && allProducts.length >= 5) {
-    return alert("Has alcanzado el límite máximo de 5 artículos permitidos.");
-  }
-
   const name = document.getElementById('newProdName').value;
   const price = document.getElementById('newProdPrice').value;
   const cat = document.getElementById('newProdCat').value.trim();
@@ -1363,9 +1357,7 @@ function saveProduct() {
   if(!name || !price || !cat) return alert(t('alert_required_fields'));
   if(stock !== '' && Number(stock) < 0) return alert(t('alert_stock_negative'));
   if(minStock !== '' && Number(minStock) < 0) return alert(t('alert_min_stock_negative'));
-  
-  // ... resto de tu lógica para guardar ...
-}
+
   closeModals();
   showToast(editId ? t('toast_updating_product') : t('toast_saving_product'));
 
