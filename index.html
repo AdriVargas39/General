@@ -232,6 +232,7 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
       <img id="headerLogoImg" src="" alt="Logo" style="display:none;">
       <svg id="headerLogoSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
     </button>
+    <span id="headerStoreName" class="header-title"></span>
     <div id="langSwitcher" style="display:flex; gap:4px; margin-left:auto;">
       <button type="button" class="lang-btn" data-lang="es" onclick="setLanguage('es')" title="Español">🇪🇸</button>
       <button type="button" class="lang-btn" data-lang="en" onclick="setLanguage('en')" title="English">🇺🇸</button>
@@ -256,6 +257,15 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
       <span data-i18n="tab_chat">Chat</span>
     </button>
+  </div>
+
+  <div id="landingScreen" style="display:none; flex:1; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:32px 24px; gap:14px; overflow-y:auto;">
+    <div style="width:64px; height:64px; border-radius:50%; background:var(--surface-muted); display:flex; align-items:center; justify-content:center; font-size:28px;">🛍️</div>
+    <h1 style="font-size:19px; font-weight:700;" data-i18n="landing_title">Vende desde casa</h1>
+    <p id="landingNotFound" style="display:none; font-size:13.5px; color:var(--danger); font-weight:600;" data-i18n="landing_not_found">Ese link de tienda no existe o ya no está disponible.</p>
+    <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.5; max-width:340px;" data-i18n="landing_intro">Crea tu propia tienda en minutos, o si ya tienes una, inicia sesión para administrarla.</p>
+    <button class="whatsapp-btn" style="background:var(--text-primary); max-width:280px; margin-top:4px;" onclick="openCreateStoreModal()" data-i18n="landing_create_btn">✨ Crear mi tienda</button>
+    <button class="btn-full" style="background:var(--surface-muted); color:var(--text-primary); max-width:280px; border:1px solid var(--border);" onclick="openLoginModal()" data-i18n="landing_login_btn">Ya tengo una tienda, iniciar sesión</button>
   </div>
 
   <div class="views">
@@ -300,7 +310,7 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
     </div>
 
     <div id="pedidos" class="view">
-      <div class="admin-toggle" onclick="openLoginModal()">
+      <div class="admin-toggle" onclick="openAdminPanel()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span id="adminLabel" data-i18n="admin_label_client">Modo cliente</span>
         <span style="margin-left:auto;font-size:11px;color:var(--text-quaternary)" data-i18n="admin_lock_hint">Acceso admin 🔒</span>
@@ -331,7 +341,7 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
   <div id="loginModal" class="modal-overlay" onclick="closeModals(event)">
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <span class="modal-title" data-i18n="login_title">Admin Login</span>
+        <span class="modal-title" id="loginModalTitle" data-i18n="login_title">Admin Login</span>
         <button class="modal-close" onclick="closeModals()">✕</button>
       </div>
       <input type="text" id="adminEmail" class="form-input" placeholder="Usuario (8 caracteres)" maxlength="8" data-i18n-placeholder="username_placeholder">
@@ -339,9 +349,45 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
         <input type="password" id="adminPass" class="form-input" placeholder="Contraseña" data-i18n-placeholder="password_placeholder">
         <button type="button" class="password-toggle" id="passToggleBtn" onclick="togglePassword()" title="Mostrar contraseña" data-i18n-title="show_password_tooltip">👁️</button>
       </div>
-      <button class="btn-full" onclick="loginAdmin()" data-i18n="login_btn">Ingresar</button>
-      <button class="btn-full" style="background:var(--text-secondary); margin-top:10px; display:none;" id="registerBtn" onclick="registerAdmin()" data-i18n="register_btn">Crear cuenta de administrador</button>
+      <div id="createStoreFields" style="display:none;">
+        <input type="text" id="newStoreName" class="form-input" placeholder="Nombre de tu tienda" data-i18n-placeholder="store_name_placeholder">
+        <input type="tel" id="newStoreWhatsapp" class="form-input" placeholder="Tu WhatsApp (ej: 573001234567)" data-i18n-placeholder="store_whatsapp_placeholder">
+      </div>
+      <button class="btn-full" id="loginSubmitBtn" onclick="loginAdmin()" data-i18n="login_btn">Ingresar</button>
+      <button type="button" class="btn-sm" style="width:100%; margin-top:10px; justify-content:center;" id="loginModeToggleBtn" onclick="toggleLoginMode()" data-i18n="create_store_link">¿No tienes tienda? Crea la tuya</button>
       <button class="btn-full" style="background:#dc2626; margin-top:10px; display:none;" id="logoutBtn" onclick="logoutAdmin()" data-i18n="logout_btn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <div id="accountModal" class="modal-overlay" onclick="closeModals(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title" data-i18n="account_modal_title">Mi Tienda</span>
+        <button class="modal-close" onclick="closeModals()">✕</button>
+      </div>
+
+      <label style="font-size:12px; margin-bottom:5px; display:block;" data-i18n="store_link_label">Tu link para compartir:</label>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input type="text" id="storeLinkInput" class="form-input" readonly style="margin-bottom:0; flex:1;">
+        <button type="button" class="btn-sm" style="flex:0 0 auto; height:44px;" onclick="copyStoreLink()" data-i18n="copy_link_btn">📋 Copiar</button>
+      </div>
+
+      <label style="font-size:12px; margin-bottom:5px; display:block;" data-i18n="store_name_label">Nombre de tu tienda:</label>
+      <input type="text" id="accStoreName" class="form-input" placeholder="Nombre de tu tienda" data-i18n-placeholder="store_name_placeholder">
+
+      <label style="font-size:12px; margin-bottom:5px; display:block;" data-i18n="store_whatsapp_label">Tu número de WhatsApp:</label>
+      <input type="tel" id="accStoreWhatsapp" class="form-input" placeholder="Ej: 573001234567" data-i18n-placeholder="store_whatsapp_placeholder">
+
+      <button class="btn-full" onclick="saveStoreSettings()" data-i18n="save_store_settings_btn">Guardar cambios de la tienda</button>
+
+      <div style="height:1px; background:var(--border); margin:18px 0;"></div>
+
+      <label style="font-size:12px; margin-bottom:5px; display:block;" data-i18n="change_password_label">Cambiar contraseña:</label>
+      <input type="password" id="accCurrentPass" class="form-input" placeholder="Contraseña actual" data-i18n-placeholder="current_password_placeholder">
+      <input type="password" id="accNewPass" class="form-input" placeholder="Contraseña nueva (mínimo 6 caracteres)" data-i18n-placeholder="new_password_placeholder">
+      <button class="btn-full" style="background:var(--text-secondary);" onclick="changeAdminPassword()" data-i18n="change_password_btn">Actualizar contraseña</button>
+
+      <button class="btn-full" style="background:#dc2626; margin-top:14px;" onclick="logoutAdmin()" data-i18n="logout_btn">Cerrar Sesión</button>
     </div>
   </div>
 
@@ -441,6 +487,29 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+// ===== MULTI-TIENDA: cada vendedora tiene su propia tienda identificada por ?tienda=ID en el link =====
+const urlParams = new URLSearchParams(window.location.search);
+let storeId = urlParams.get('tienda') || null;
+let storeExists = false;
+
+function storeRef() { return db.collection('stores').doc(storeId); }
+function storeCol(name) { return storeRef().collection(name); }
+
+function goToStore(id) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('tienda', id);
+  window.location.href = url.toString();
+}
+
+function copyStoreLink() {
+  if(!storeId) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('tienda', storeId);
+  navigator.clipboard.writeText(url.toString())
+    .then(() => showToast(t('toast_link_copied')))
+    .catch(() => showToast(t('toast_copy_failed')));
+}
+
 const UPLOAD_WORKER_URL = "https://generalfoto.raipimo37.workers.dev/";
 
 function uploadToR2(file) {
@@ -454,7 +523,7 @@ function uploadToR2(file) {
     .then(data => data.url);
 }
 
-const whatsappNumber = "573170746314"; 
+let storeWhatsapp = ""; // número de WhatsApp propio de cada tienda, se carga desde Firestore
 let pendingWhatsAppText = '';
 
 const I18N = {
@@ -535,6 +604,22 @@ const I18N = {
     wa_order_hello:'¡Hola! Soy', wa_order_intro:'. Quiero hacer un pedido:',
     wa_order_total:'Total', wa_order_phone:'Mi celular es',
     wa_chat_hello:'Hola, soy', wa_chat_default_name:'un cliente de la tienda',
+    toast_link_copied:'¡Link copiado! Ya puedes compartirlo.', alert_store_no_whatsapp:'Esta tienda todavía no tiene un WhatsApp configurado.',
+    alert_no_store_for_account:'Esta cuenta no tiene ninguna tienda asociada.', toast_redirecting_to_store:'Te estamos llevando a tu tienda...',
+    toast_store_created:'¡Tu tienda fue creada con éxito!', alert_store_name_required:'Escribe el nombre de tu tienda',
+    alert_store_whatsapp_required:'Escribe tu número de WhatsApp (con código de país, sin + ni espacios)',
+    create_store_title:'Crea tu tienda', create_store_btn:'Crear mi tienda',
+    create_store_link:'¿No tienes tienda? Crea la tuya', back_to_login_link:'Ya tengo una tienda, iniciar sesión',
+    store_name_placeholder:'Nombre de tu tienda', store_whatsapp_placeholder:'Tu WhatsApp (ej: 573001234567)',
+    account_modal_title:'Mi Tienda', store_link_label:'Tu link para compartir:', copy_link_btn:'📋 Copiar',
+    store_name_label:'Nombre de tu tienda:', store_whatsapp_label:'Tu número de WhatsApp:',
+    save_store_settings_btn:'Guardar cambios de la tienda',
+    change_password_label:'Cambiar contraseña:', current_password_placeholder:'Contraseña actual', new_password_placeholder:'Contraseña nueva (mínimo 6 caracteres)',
+    change_password_btn:'Actualizar contraseña', toast_store_settings_saved:'¡Datos de la tienda actualizados!',
+    alert_password_fields_required:'Completa tu contraseña actual y la nueva', toast_password_changed:'¡Contraseña actualizada con éxito!',
+    landing_title:'Vende desde casa', landing_not_found:'Ese link de tienda no existe o ya no está disponible.',
+    landing_intro:'Crea tu propia tienda en minutos, o si ya tienes una, inicia sesión para administrarla.',
+    landing_create_btn:'✨ Crear mi tienda', landing_login_btn:'Ya tengo una tienda, iniciar sesión',
   },
   en: {
     tab_catalogo:'Catalog', tab_carrito:'Cart', tab_pedidos:'Orders', tab_chat:'Chat',
@@ -613,6 +698,22 @@ const I18N = {
     wa_order_hello:'Hello! I\'m', wa_order_intro:'. I\'d like to place an order:',
     wa_order_total:'Total', wa_order_phone:'My phone number is',
     wa_chat_hello:'Hello, I\'m', wa_chat_default_name:'a store customer',
+    toast_link_copied:'Link copied! You can share it now.', alert_store_no_whatsapp:'This store hasn\'t set up a WhatsApp number yet.',
+    alert_no_store_for_account:'This account has no store associated with it.', toast_redirecting_to_store:'Taking you to your store...',
+    toast_store_created:'Your store was created successfully!', alert_store_name_required:'Enter your store name',
+    alert_store_whatsapp_required:'Enter your WhatsApp number (with country code, no + or spaces)',
+    create_store_title:'Create your store', create_store_btn:'Create my store',
+    create_store_link:'Don\'t have a store? Create yours', back_to_login_link:'I already have a store, log in',
+    store_name_placeholder:'Your store name', store_whatsapp_placeholder:'Your WhatsApp (e.g. 573001234567)',
+    account_modal_title:'My Store', store_link_label:'Your shareable link:', copy_link_btn:'📋 Copy',
+    store_name_label:'Your store name:', store_whatsapp_label:'Your WhatsApp number:',
+    save_store_settings_btn:'Save store changes',
+    change_password_label:'Change password:', current_password_placeholder:'Current password', new_password_placeholder:'New password (min. 6 characters)',
+    change_password_btn:'Update password', toast_store_settings_saved:'Store details updated!',
+    alert_password_fields_required:'Fill in your current and new password', toast_password_changed:'Password updated successfully!',
+    landing_title:'Sell from home', landing_not_found:'That store link doesn\'t exist or is no longer available.',
+    landing_intro:'Create your own store in minutes, or if you already have one, log in to manage it.',
+    landing_create_btn:'✨ Create my store', landing_login_btn:'I already have a store, log in',
   },
   fr: {
     tab_catalogo:'Catalogue', tab_carrito:'Panier', tab_pedidos:'Commandes', tab_chat:'Chat',
@@ -691,6 +792,22 @@ const I18N = {
     wa_order_hello:'Bonjour ! Je suis', wa_order_intro:'. Je souhaite passer une commande :',
     wa_order_total:'Total', wa_order_phone:'Mon numéro de téléphone est',
     wa_chat_hello:'Bonjour, je suis', wa_chat_default_name:'un client de la boutique',
+    toast_link_copied:'Lien copié ! Vous pouvez le partager.', alert_store_no_whatsapp:'Cette boutique n\'a pas encore de numéro WhatsApp configuré.',
+    alert_no_store_for_account:'Ce compte n\'est associé à aucune boutique.', toast_redirecting_to_store:'Redirection vers votre boutique...',
+    toast_store_created:'Votre boutique a été créée avec succès !', alert_store_name_required:'Indiquez le nom de votre boutique',
+    alert_store_whatsapp_required:'Indiquez votre numéro WhatsApp (avec l\'indicatif, sans + ni espaces)',
+    create_store_title:'Créez votre boutique', create_store_btn:'Créer ma boutique',
+    create_store_link:'Vous n\'avez pas de boutique ? Créez la vôtre', back_to_login_link:'J\'ai déjà une boutique, me connecter',
+    store_name_placeholder:'Nom de votre boutique', store_whatsapp_placeholder:'Votre WhatsApp (ex : 573001234567)',
+    account_modal_title:'Ma Boutique', store_link_label:'Votre lien à partager :', copy_link_btn:'📋 Copier',
+    store_name_label:'Nom de votre boutique :', store_whatsapp_label:'Votre numéro WhatsApp :',
+    save_store_settings_btn:'Enregistrer les modifications',
+    change_password_label:'Changer le mot de passe :', current_password_placeholder:'Mot de passe actuel', new_password_placeholder:'Nouveau mot de passe (6 caractères min.)',
+    change_password_btn:'Mettre à jour le mot de passe', toast_store_settings_saved:'Informations de la boutique mises à jour !',
+    alert_password_fields_required:'Remplissez votre mot de passe actuel et le nouveau', toast_password_changed:'Mot de passe mis à jour avec succès !',
+    landing_title:'Vendez depuis chez vous', landing_not_found:'Ce lien de boutique n\'existe pas ou n\'est plus disponible.',
+    landing_intro:'Créez votre propre boutique en quelques minutes, ou connectez-vous si vous en avez déjà une.',
+    landing_create_btn:'✨ Créer ma boutique', landing_login_btn:'J\'ai déjà une boutique, me connecter',
   }
 };
 
@@ -728,8 +845,9 @@ function setLanguage(lang) {
 }
 
 function openWhatsApp(text) {
+  if(!storeWhatsapp) { alert(t('alert_store_no_whatsapp')); return; }
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  const waUrl = 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent(text);
+  const waUrl = 'https://wa.me/' + storeWhatsapp + '?text=' + encodeURIComponent(text);
 
   if (isMobile) {
     window.open(waUrl, '_blank');
@@ -753,25 +871,55 @@ const FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="#F5EDE4"/><text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#A89484" text-anchor="middle" dominant-baseline="middle">Sin imagen</text></svg>`
 );
 let clientId = null;
-let cart = JSON.parse(localStorage.getItem('tienda_cart') || '[]');
+function cartKey() { return 'tienda_cart_' + (storeId || 'none'); }
+let cart = JSON.parse(localStorage.getItem(cartKey()) || '[]');
 let allProducts = [];
 let categories = [];
 let isAdmin = false;
 let currentCategory = 'all';
 let currentSearch = '';
 
-auth.onAuthStateChanged(user => {
-  if (!user) {
-    auth.signInAnonymously().catch(err => {
-      console.error('Error de autenticación:', err);
-      alert(t('alert_auth_failed') + err.message + t('alert_auth_hint'));
-    });
-    return;
-  }
+function initApp() {
+  if(!storeId) { showLanding(false); return; }
+  storeRef().get().then(doc => {
+    if(!doc.exists) { showLanding(true); return; }
+    startAuth();
+  }).catch(() => showLanding(true));
+}
 
-  isAdmin = !user.isAnonymous;
-  clientId = user.uid;
+function showLanding(notFound) {
+  document.querySelector('.tab-bar').style.display = 'none';
+  document.querySelector('.views').style.display = 'none';
+  document.getElementById('landingScreen').style.display = 'flex';
+  document.getElementById('landingNotFound').style.display = notFound ? 'block' : 'none';
+}
 
+function startAuth() {
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      auth.signInAnonymously().catch(err => {
+        console.error('Error de autenticación:', err);
+        alert(t('alert_auth_failed') + err.message + t('alert_auth_hint'));
+      });
+      return;
+    }
+
+    clientId = user.uid;
+
+    if(user.isAnonymous) {
+      isAdmin = false;
+      onAdminStatusReady();
+      return;
+    }
+
+    db.collection('admins').doc(user.uid).get().then(doc => {
+      isAdmin = doc.exists && doc.data().storeId === storeId;
+      onAdminStatusReady();
+    }).catch(() => { isAdmin = false; onAdminStatusReady(); });
+  });
+}
+
+function onAdminStatusReady() {
   document.getElementById('adminLabel').textContent = isAdmin ? t('admin_label_admin') : t('admin_label_client');
   document.getElementById('headerLogoBtn').classList.toggle('admin', isAdmin);
   document.getElementById('adminControlsArea').style.display = isAdmin ? 'block' : 'none';
@@ -780,13 +928,40 @@ auth.onAuthStateChanged(user => {
   document.getElementById('clearOrdersBtn').style.display = isAdmin ? 'block' : 'none';
   if(!isAdmin) currentStockFilter = 'all';
 
-  loadLogo();
+  loadStoreConfig();
   loadCategories();
   loadProducts();
   loadOrders();
-});
+}
 
-function openLoginModal() { document.getElementById('loginModal').classList.add('active'); checkAdminExists(); }
+function openAdminPanel() {
+  if(isAdmin) openAccountModal(); else openLoginModal();
+}
+
+let loginMode = 'login';
+function openLoginModal() {
+  loginMode = 'login';
+  document.getElementById('createStoreFields').style.display = 'none';
+  document.getElementById('loginModalTitle').textContent = t('login_title');
+  document.getElementById('loginSubmitBtn').textContent = t('login_btn');
+  document.getElementById('loginSubmitBtn').onclick = loginAdmin;
+  document.getElementById('loginModeToggleBtn').textContent = t('create_store_link');
+  document.getElementById('loginModal').classList.add('active');
+}
+function openCreateStoreModal() {
+  openLoginModal();
+  toggleLoginMode();
+}
+function toggleLoginMode() {
+  loginMode = loginMode === 'login' ? 'create' : 'login';
+  const isCreate = loginMode === 'create';
+  document.getElementById('createStoreFields').style.display = isCreate ? 'block' : 'none';
+  document.getElementById('loginModalTitle').textContent = isCreate ? t('create_store_title') : t('login_title');
+  document.getElementById('loginSubmitBtn').textContent = isCreate ? t('create_store_btn') : t('login_btn');
+  document.getElementById('loginSubmitBtn').onclick = isCreate ? createStore : loginAdmin;
+  document.getElementById('loginModeToggleBtn').textContent = isCreate ? t('back_to_login_link') : t('create_store_link');
+}
+
 function openLogoModal() { 
   document.getElementById('newLogoImg').value = '';
   document.getElementById('logoModal').classList.add('active'); 
@@ -813,55 +988,118 @@ function isValidUsername(username) {
   return /^[a-zA-Z0-9]{8}$/.test(username);
 }
 
-function checkAdminExists() {
-  db.collection('config').doc('adminMeta').get().then(doc => {
-    const hasAdmin = doc.exists && doc.data().hasAdmin;
-    document.getElementById('registerBtn').style.display = hasAdmin ? 'none' : 'block';
-  }).catch(() => {});
-}
-
 function loginAdmin() {
   const username = document.getElementById('adminEmail').value.trim();
   const pass = document.getElementById('adminPass').value;
   if(!isValidUsername(username)) return alert(t('alert_username_format'));
-  auth.signInWithEmailAndPassword(usernameToEmail(username), pass).then(() => {
-    closeModals(); showToast(t('toast_welcome_admin'));
-  }).catch(e => alert(t('alert_login_error') + e.message));
-}
-
-function registerAdmin() {
-  const username = document.getElementById('adminEmail').value.trim();
-  const pass = document.getElementById('adminPass').value;
-  if(!isValidUsername(username)) return alert(t('alert_username_format'));
-  if(!pass || pass.length < 6) return alert(t('alert_password_short'));
-
-  db.collection('config').doc('adminMeta').get().then(doc => {
-    if(doc.exists && doc.data().hasAdmin) {
-      alert(t('alert_admin_already_exists'));
+  auth.signInWithEmailAndPassword(usernameToEmail(username), pass).then(cred => {
+    return db.collection('admins').doc(cred.user.uid).get();
+  }).then(doc => {
+    if(!doc.exists) {
+      auth.signOut();
+      alert(t('alert_no_store_for_account'));
       return;
     }
-    return auth.createUserWithEmailAndPassword(usernameToEmail(username), pass).then(() => {
-      return db.collection('config').doc('adminMeta').set({ hasAdmin: true, username }, { merge: true });
-    }).then(() => {
-      closeModals(); showToast(t('toast_admin_created'));
-    });
+    const theirStoreId = doc.data().storeId;
+    if(theirStoreId !== storeId) {
+      closeModals();
+      showToast(t('toast_redirecting_to_store'));
+      goToStore(theirStoreId);
+    } else {
+      closeModals(); showToast(t('toast_welcome_admin'));
+    }
   }).catch(e => alert(t('alert_login_error') + e.message));
 }
 
-function logoutAdmin() { auth.signOut(); closeModals(); showToast(t('toast_logged_out')); }
+function createStore() {
+  const username = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const newName = document.getElementById('newStoreName').value.trim();
+  const newWhatsapp = document.getElementById('newStoreWhatsapp').value.trim();
+  if(!isValidUsername(username)) return alert(t('alert_username_format'));
+  if(!pass || pass.length < 6) return alert(t('alert_password_short'));
+  if(!newName) return alert(t('alert_store_name_required'));
+  if(!newWhatsapp) return alert(t('alert_store_whatsapp_required'));
 
-function loadLogo() {
-  db.collection('config').doc('store').get().then(doc => {
+  auth.createUserWithEmailAndPassword(usernameToEmail(username), pass).then(cred => {
+    const newStoreRef = db.collection('stores').doc();
+    return newStoreRef.set({
+      name: newName, whatsapp: newWhatsapp, logoUrl: '', ownerUid: cred.user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => db.collection('admins').doc(cred.user.uid).set({ storeId: newStoreRef.id, username }))
+      .then(() => newStoreRef.id);
+  }).then(newStoreId => {
+    closeModals();
+    showToast(t('toast_store_created'));
+    goToStore(newStoreId);
+  }).catch(e => alert(t('alert_login_error') + e.message));
+}
+
+function logoutAdmin() {
+  auth.signOut();
+  closeModals();
+  showToast(t('toast_logged_out'));
+  goToStore(storeId);
+}
+
+function openAccountModal() {
+  const link = window.location.origin + window.location.pathname + '?tienda=' + storeId;
+  document.getElementById('storeLinkInput').value = link;
+  storeRef().get().then(doc => {
+    const d = doc.exists ? doc.data() : {};
+    document.getElementById('accStoreName').value = d.name || '';
+    document.getElementById('accStoreWhatsapp').value = d.whatsapp || '';
+  }).catch(() => {});
+  document.getElementById('accCurrentPass').value = '';
+  document.getElementById('accNewPass').value = '';
+  document.getElementById('accountModal').classList.add('active');
+}
+
+function saveStoreSettings() {
+  if(!isAdmin) return alert(t('alert_not_authorized'));
+  const name = document.getElementById('accStoreName').value.trim();
+  const whatsapp = document.getElementById('accStoreWhatsapp').value.trim();
+  if(!name) return alert(t('alert_store_name_required'));
+  if(!whatsapp) return alert(t('alert_store_whatsapp_required'));
+  storeRef().set({ name, whatsapp }, { merge: true }).then(() => {
+    loadStoreConfig();
+    showToast(t('toast_store_settings_saved'));
+  }).catch(err => alert(t('alert_generic_error') + err.message));
+}
+
+function changeAdminPassword() {
+  if(!isAdmin) return alert(t('alert_not_authorized'));
+  const current = document.getElementById('accCurrentPass').value;
+  const newPass = document.getElementById('accNewPass').value;
+  if(!current || !newPass) return alert(t('alert_password_fields_required'));
+  if(newPass.length < 6) return alert(t('alert_password_short'));
+  const user = auth.currentUser;
+  const credential = firebase.auth.EmailAuthProvider.credential(user.email, current);
+  user.reauthenticateWithCredential(credential).then(() => user.updatePassword(newPass)).then(() => {
+    document.getElementById('accCurrentPass').value = '';
+    document.getElementById('accNewPass').value = '';
+    showToast(t('toast_password_changed'));
+  }).catch(e => alert(t('alert_login_error') + e.message));
+}
+
+function loadStoreConfig() {
+  storeRef().get().then(doc => {
     const logoImg = document.getElementById('headerLogoImg');
     const logoSvg = document.getElementById('headerLogoSvg');
-    if(doc.exists && doc.data().logoUrl) {
-      logoImg.src = doc.data().logoUrl;
+    const nameEl = document.getElementById('headerStoreName');
+    const d = doc.exists ? doc.data() : {};
+
+    if(d.logoUrl) {
+      logoImg.src = d.logoUrl;
       logoImg.style.display = 'block';
       logoSvg.style.display = 'none';
     } else {
       logoImg.style.display = 'none';
       logoSvg.style.display = 'block';
     }
+
+    nameEl.textContent = d.name || '';
+    storeWhatsapp = d.whatsapp || '';
   }).catch(() => {});
 }
 
@@ -881,10 +1119,10 @@ function saveLogo() {
   showToast(t('toast_uploading_logo'));
 
   uploadToR2(file).then(url => {
-    return db.collection('config').doc('store').set({ logoUrl: url }, { merge: true });
+    return storeRef().set({ logoUrl: url }, { merge: true });
   }).then(() => {
     document.getElementById('newLogoImg').value = '';
-    loadLogo();
+    loadStoreConfig();
     showToast(t('toast_logo_updated'));
   }).catch(err => alert(t('alert_logo_upload_error') + err.message));
 }
@@ -892,14 +1130,14 @@ function saveLogo() {
 function removeLogo() {
   if (!isAdmin) return alert(t('alert_not_authorized'));
   closeModals();
-  db.collection('config').doc('store').set({ logoUrl: '' }, { merge: true }).then(() => {
-    loadLogo();
+  storeRef().set({ logoUrl: '' }, { merge: true }).then(() => {
+    loadStoreConfig();
     showToast(t('toast_logo_removed'));
   }).catch(err => alert(t('alert_generic_error') + err.message));
 }
 
 function loadProducts() {
-  db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snap => {
+  storeCol('products').orderBy('createdAt', 'desc').onSnapshot(snap => {
     allProducts = [];
     snap.forEach(doc => allProducts.push({ id: doc.id, ...doc.data() }));
     renderCategories();
@@ -918,7 +1156,7 @@ function slugify(str) {
 }
 
 function loadCategories() {
-  db.collection('categories').orderBy('createdAt', 'asc').onSnapshot(snap => {
+  storeCol('categories').orderBy('createdAt', 'asc').onSnapshot(snap => {
     categories = [];
     snap.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
     renderCategories();
@@ -961,7 +1199,7 @@ function saveCategory() {
   const exists = categories.some(c => slugify(c.name) === slugify(name));
   if(exists) return alert(t('alert_category_exists'));
 
-  db.collection('categories').add({
+  storeCol('categories').add({
     name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     closeModals();
@@ -976,7 +1214,7 @@ function deleteCategory(id, event) {
   if(event) event.stopPropagation();
   if(!isAdmin) return alert(t('alert_action_not_allowed'));
   if(confirm(t('confirm_delete_category'))) {
-    db.collection('categories').doc(id).delete().then(() => showToast(t('toast_category_deleted'))).catch(err => alert(err.message));
+    storeCol('categories').doc(id).delete().then(() => showToast(t('toast_category_deleted'))).catch(err => alert(err.message));
   }
 }
 
@@ -1135,8 +1373,8 @@ function saveProduct() {
       dataObj.image = FALLBACK_IMG;
     }
 
-    let promise = editId ? db.collection('products').doc(editId).update(dataObj) : 
-      db.collection('products').add({...dataObj, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+    let promise = editId ? storeCol('products').doc(editId).update(dataObj) : 
+      storeCol('products').add({...dataObj, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
 
     promise.then(() => showToast(t('toast_operation_success'))).catch(err => alert(t('alert_generic_error') + err.message));
   };
@@ -1153,7 +1391,7 @@ function saveProduct() {
 function deleteProduct(id) {
   if(!isAdmin) return;
   if(confirm(t('confirm_delete_product'))) {
-    db.collection('products').doc(id).delete().then(() => showToast(t('toast_product_deleted')));
+    storeCol('products').doc(id).delete().then(() => showToast(t('toast_product_deleted')));
   }
 }
 
@@ -1169,7 +1407,7 @@ function addToCart(id) {
   saveCart(); renderCart(); showToast(t('toast_added_to_cart'));
 }
 
-function saveCart() { localStorage.setItem('tienda_cart', JSON.stringify(cart)); updateCartBadge(); }
+function saveCart() { localStorage.setItem(cartKey(), JSON.stringify(cart)); updateCartBadge(); }
 function updateCartBadge() { 
   const count = cart.reduce((s,i) => s + i.qty, 0); 
   const badge = document.getElementById('cartBadge');
@@ -1234,7 +1472,7 @@ function sendWhatsAppOrder() {
 
   const batch = db.batch();
   cart.forEach(item => {
-    const prodRef = db.collection('products').doc(item.id);
+    const prodRef = storeCol('products').doc(item.id);
     const originalProd = allProducts.find(p => p.id === item.id);
     if(originalProd) {
       batch.update(prodRef, { stock: Math.max(0, (originalProd.stock || 10) - item.qty) });
@@ -1242,7 +1480,7 @@ function sendWhatsAppOrder() {
   });
 
   batch.commit().then(() => {
-    return db.collection('orders').add({
+    return storeCol('orders').add({
       clientId, customerName: name, phone, items: cart, total, status: 'Pendiente', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }).then(() => {
@@ -1254,7 +1492,7 @@ function sendWhatsAppOrder() {
 let lastOrdersDocs = null;
 
 function loadOrders() {
-  let query = isAdmin ? db.collection('orders') : db.collection('orders').where('clientId', '==', clientId);
+  let query = isAdmin ? storeCol('orders') : storeCol('orders').where('clientId', '==', clientId);
   query.orderBy('createdAt', 'desc').onSnapshot(snap => {
     lastOrdersDocs = snap.docs.map(doc => ({ id: doc.id, data: doc.data() }));
     renderOrdersList(lastOrdersDocs);
@@ -1292,18 +1530,18 @@ function renderOrdersList(docs) {
   }).join('');
 }
 
-function changeStatus(id, status) { if(isAdmin) db.collection('orders').doc(id).update({status}); }
+function changeStatus(id, status) { if(isAdmin) storeCol('orders').doc(id).update({status}); }
 
 function reopenOrder(id) {
   if(!isAdmin) return;
   if(!confirm(t('confirm_reopen_order'))) return;
-  db.collection('orders').doc(id).update({status:'Enviado'});
+  storeCol('orders').doc(id).update({status:'Enviado'});
 }
 
 function deleteOrder(id) {
   if(!isAdmin) return;
   if(!confirm(t('confirm_delete_order'))) return;
-  db.collection('orders').doc(id).delete()
+  storeCol('orders').doc(id).delete()
     .then(() => showToast(t('toast_order_deleted')))
     .catch(err => alert(t('alert_delete_order_error') + err.message));
 }
@@ -1314,7 +1552,7 @@ function clearAllOrders() {
   const typed = prompt(t('prompt_clear_orders'));
   if(typed !== 'BORRAR' && typed !== 'DELETE' && typed !== 'SUPPRIMER') { showToast(t('toast_delete_cancelled')); return; }
 
-  db.collection('orders').get().then(snap => {
+  storeCol('orders').get().then(snap => {
     if(snap.empty) { showToast(t('toast_no_orders_to_delete')); return; }
     const batch = db.batch();
     snap.forEach(doc => batch.delete(doc.ref));
@@ -1355,6 +1593,7 @@ function showToast(msg) {
 applyStaticTranslations();
 renderCart();
 updateCartBadge();
+initApp();
 </script>
 </body>
 </html>
