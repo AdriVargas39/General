@@ -1,6 +1,6 @@
 {
-  "name": "Alta Costura App",
-  "short_name": "Costura",
+  "name": "Tienda App",
+  "short_name": "Tienda",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
