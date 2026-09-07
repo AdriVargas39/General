@@ -372,6 +372,8 @@ body { font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--
         <button type="button" class="btn-sm" style="flex:0 0 auto; height:44px;" onclick="copyStoreLink()" data-i18n="copy_link_btn">📋 Copiar</button>
       </div>
 
+      <div id="photoUsageInfo" style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;"></div>
+
       <label style="font-size:12px; margin-bottom:5px; display:block;" data-i18n="store_name_label">Nombre de tu tienda:</label>
       <input type="text" id="accStoreName" class="form-input" placeholder="Nombre de tu tienda" data-i18n-placeholder="store_name_placeholder">
 
@@ -512,6 +514,44 @@ function copyStoreLink() {
 
 const UPLOAD_WORKER_URL = "https://generalfoto.raipimo37.workers.dev/";
 
+// ===== LÍMITE GLOBAL DE FOTOS POR TIENDA =====
+// Cada tienda (documento stores/{storeId}) solo puede subir un máximo de
+// MAX_STORE_PHOTOS fotos en total (productos + logo), contadas de forma
+// acumulada en el campo "photosUploaded". El contador NUNCA baja al borrar
+// o reemplazar una foto, porque el archivo sigue ocupando espacio en R2
+// (este código no borra archivos de Cloudflare al eliminar/editar un producto).
+const MAX_STORE_PHOTOS = 6;
+
+// Reserva un "cupo" de foto de forma atómica antes de subir el archivo.
+// Si la tienda ya alcanzó el máximo, rechaza la promesa sin gastar ancho de banda.
+function reservePhotoSlot() {
+  return db.runTransaction(tx => {
+    return tx.get(storeRef()).then(doc => {
+      const current = (doc.exists && doc.data().photosUploaded) || 0;
+      if (current >= MAX_STORE_PHOTOS) {
+        throw new Error(t('alert_photo_limit_reached').replace('{max}', MAX_STORE_PHOTOS));
+      }
+      tx.set(storeRef(), { photosUploaded: current + 1 }, { merge: true });
+      return current + 1;
+    });
+  });
+}
+
+// Si la subida a Cloudflare falla después de reservar el cupo, lo devolvemos.
+function releasePhotoSlot() {
+  return storeRef().set({ photosUploaded: firebase.firestore.FieldValue.increment(-1) }, { merge: true }).catch(() => {});
+}
+
+// Sube un archivo respetando el límite de fotos de la tienda.
+function uploadToR2Limited(file) {
+  return reservePhotoSlot().then(() => {
+    return uploadToR2(file).catch(err => {
+      releasePhotoSlot();
+      throw err;
+    });
+  });
+}
+
 function uploadToR2(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -568,6 +608,7 @@ const I18N = {
     alert_not_authorized:'No autorizado.', alert_required_fields:'Completa al menos el nombre, precio y categoría',
     alert_stock_negative:'El stock no puede ser negativo.', alert_min_stock_negative:'El stock mínimo no puede ser negativo.',
     toast_operation_success:'¡Operación exitosa!', alert_generic_error:'Error: ', alert_image_upload_error:'Error al subir imagen: ',
+    alert_photo_limit_reached:'Límite alcanzado: esta tienda ya subió el máximo de {max} fotos permitidas.', photo_usage_label:'Fotos usadas',
     toast_updating_product:'Actualizando producto...', toast_saving_product:'Guardando producto...',
     logo_tooltip:'Logo de la tienda', show_password_tooltip:'Mostrar contraseña', add_category_tooltip:'Agregar categoría', delete_category_tooltip:'Eliminar categoría',
     product_name_placeholder:'Nombre del Artículo', product_price_placeholder:'Precio ($)',
@@ -662,6 +703,7 @@ const I18N = {
     alert_not_authorized:'Not authorized.', alert_required_fields:'Fill in at least the name, price, and category',
     alert_stock_negative:'Stock cannot be negative.', alert_min_stock_negative:'Minimum stock cannot be negative.',
     toast_operation_success:'Success!', alert_generic_error:'Error: ', alert_image_upload_error:'Error uploading image: ',
+    alert_photo_limit_reached:'Limit reached: this store already uploaded the maximum of {max} allowed photos.', photo_usage_label:'Photos used',
     toast_updating_product:'Updating product...', toast_saving_product:'Saving product...',
     logo_tooltip:'Store logo', show_password_tooltip:'Show password', add_category_tooltip:'Add category', delete_category_tooltip:'Delete category',
     product_name_placeholder:'Item name', product_price_placeholder:'Price ($)',
@@ -756,6 +798,7 @@ const I18N = {
     alert_not_authorized:'Non autorisé.', alert_required_fields:'Renseignez au moins le nom, le prix et la catégorie',
     alert_stock_negative:'Le stock ne peut pas être négatif.', alert_min_stock_negative:'Le stock minimum ne peut pas être négatif.',
     toast_operation_success:'Opération réussie !', alert_generic_error:'Erreur : ', alert_image_upload_error:'Erreur lors de l\'envoi de l\'image : ',
+    alert_photo_limit_reached:'Limite atteinte : cette boutique a déjà téléchargé le maximum de {max} photos autorisées.', photo_usage_label:'Photos utilisées',
     toast_updating_product:'Mise à jour du produit...', toast_saving_product:'Enregistrement du produit...',
     logo_tooltip:'Logo de la boutique', show_password_tooltip:'Afficher le mot de passe', add_category_tooltip:'Ajouter une catégorie', delete_category_tooltip:'Supprimer la catégorie',
     product_name_placeholder:'Nom de l\'article', product_price_placeholder:'Prix ($)',
@@ -1049,6 +1092,8 @@ function openAccountModal() {
     const d = doc.exists ? doc.data() : {};
     document.getElementById('accStoreName').value = d.name || '';
     document.getElementById('accStoreWhatsapp').value = d.whatsapp || '';
+    const used = d.photosUploaded || 0;
+    document.getElementById('photoUsageInfo').textContent = `${t('photo_usage_label')}: ${used} / ${MAX_STORE_PHOTOS}`;
   }).catch(() => {});
   document.getElementById('accCurrentPass').value = '';
   document.getElementById('accNewPass').value = '';
@@ -1118,7 +1163,7 @@ function saveLogo() {
   closeModals();
   showToast(t('toast_uploading_logo'));
 
-  uploadToR2(file).then(url => {
+  uploadToR2Limited(file).then(url => {
     return storeRef().set({ logoUrl: url }, { merge: true });
   }).then(() => {
     document.getElementById('newLogoImg').value = '';
@@ -1380,7 +1425,7 @@ function saveProduct() {
   };
 
   if(file) {
-    uploadToR2(file)
+    uploadToR2Limited(file)
       .then(url => saveData(url))
       .catch(err => alert(t('alert_image_upload_error') + err.message));
   } else {
